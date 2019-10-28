@@ -838,21 +838,21 @@ func (do *Domain) globalBindHandleWorkerLoop() {
 		defer recoverInDomain("globalBindHandleWorkerLoop", false)
 		bindWorkerTicker := time.NewTicker(bindinfo.Lease)
 		defer bindWorkerTicker.Stop()
-		for {
-			select {
-			case <-do.exit:
-				return
-			case <-bindWorkerTicker.C:
-				err := do.bindHandle.Update(false)
-				if err != nil {
-					logutil.BgLogger().Error("update bindinfo failed", zap.Error(err))
-				}
-				if !variable.TiDBOptOn(variable.CapturePlanBaseline.GetVal()) {
-					continue
-				}
-				do.bindHandle.CaptureBaselines(do.InfoSchema())
-			}
-		}
+		//for {
+		//	select {
+		//	case <-do.exit:
+		//		return
+		//	case <-bindWorkerTicker.C:
+		//		err := do.bindHandle.Update(false)
+		//		if err != nil {
+		//			logutil.BgLogger().Error("update bindinfo failed", zap.Error(err))
+		//		}
+		//		if !variable.TiDBOptOn(variable.CapturePlanBaseline.GetVal()) {
+		//			continue
+		//		}
+		//		do.bindHandle.CaptureBaselines(do.InfoSchema())
+		//	}
+		//}
 	}()
 }
 
@@ -960,21 +960,21 @@ func (do *Domain) loadStatsWorker() {
 	} else {
 		logutil.BgLogger().Info("init stats info time", zap.Duration("take time", time.Since(t)))
 	}
-	for {
-		select {
-		case <-loadTicker.C:
-			err = statsHandle.Update(do.InfoSchema())
-			if err != nil {
-				logutil.BgLogger().Debug("update stats info failed", zap.Error(err))
-			}
-			err = statsHandle.LoadNeededHistograms()
-			if err != nil {
-				logutil.BgLogger().Debug("load histograms failed", zap.Error(err))
-			}
-		case <-do.exit:
-			return
-		}
-	}
+	//for {
+	//	select {
+	//	case <-loadTicker.C:
+	//		err = statsHandle.Update(do.InfoSchema())
+	//		if err != nil {
+	//			logutil.BgLogger().Debug("update stats info failed", zap.Error(err))
+	//		}
+	//		err = statsHandle.LoadNeededHistograms()
+	//		if err != nil {
+	//			logutil.BgLogger().Debug("load histograms failed", zap.Error(err))
+	//		}
+	//	case <-do.exit:
+	//		return
+	//	}
+	//}
 }
 
 func (do *Domain) updateStatsWorker(ctx sessionctx.Context, owner owner.Manager) {
@@ -988,72 +988,72 @@ func (do *Domain) updateStatsWorker(ctx sessionctx.Context, owner owner.Manager)
 	defer dumpFeedbackTicker.Stop()
 	loadFeedbackTicker := time.NewTicker(5 * lease)
 	defer loadFeedbackTicker.Stop()
-	statsHandle := do.StatsHandle()
+	_ = do.StatsHandle()
 	defer func() {
 		do.SetStatsUpdating(false)
 		do.wg.Done()
 	}()
-	for {
-		select {
-		case <-do.exit:
-			statsHandle.FlushStats()
-			return
-			// This channel is sent only by ddl owner.
-		case t := <-statsHandle.DDLEventCh():
-			err := statsHandle.HandleDDLEvent(t)
-			if err != nil {
-				logutil.BgLogger().Debug("handle ddl event failed", zap.Error(err))
-			}
-		case <-deltaUpdateTicker.C:
-			err := statsHandle.DumpStatsDeltaToKV(handle.DumpDelta)
-			if err != nil {
-				logutil.BgLogger().Debug("dump stats delta failed", zap.Error(err))
-			}
-			statsHandle.UpdateErrorRate(do.InfoSchema())
-		case <-loadFeedbackTicker.C:
-			statsHandle.UpdateStatsByLocalFeedback(do.InfoSchema())
-			if !owner.IsOwner() {
-				continue
-			}
-			err := statsHandle.HandleUpdateStats(do.InfoSchema())
-			if err != nil {
-				logutil.BgLogger().Debug("update stats using feedback failed", zap.Error(err))
-			}
-		case <-dumpFeedbackTicker.C:
-			err := statsHandle.DumpStatsFeedbackToKV()
-			if err != nil {
-				logutil.BgLogger().Debug("dump stats feedback failed", zap.Error(err))
-			}
-		case <-gcStatsTicker.C:
-			if !owner.IsOwner() {
-				continue
-			}
-			err := statsHandle.GCStats(do.InfoSchema(), do.DDL().GetLease())
-			if err != nil {
-				logutil.BgLogger().Debug("GC stats failed", zap.Error(err))
-			}
-		}
-	}
+	//for {
+	//	select {
+	//	case <-do.exit:
+	//		statsHandle.FlushStats()
+	//		return
+	//		// This channel is sent only by ddl owner.
+	//	case t := <-statsHandle.DDLEventCh():
+	//		err := statsHandle.HandleDDLEvent(t)
+	//		if err != nil {
+	//			logutil.BgLogger().Debug("handle ddl event failed", zap.Error(err))
+	//		}
+	//	case <-deltaUpdateTicker.C:
+	//		err := statsHandle.DumpStatsDeltaToKV(handle.DumpDelta)
+	//		if err != nil {
+	//			logutil.BgLogger().Debug("dump stats delta failed", zap.Error(err))
+	//		}
+	//		statsHandle.UpdateErrorRate(do.InfoSchema())
+	//	case <-loadFeedbackTicker.C:
+	//		statsHandle.UpdateStatsByLocalFeedback(do.InfoSchema())
+	//		if !owner.IsOwner() {
+	//			continue
+	//		}
+	//		err := statsHandle.HandleUpdateStats(do.InfoSchema())
+	//		if err != nil {
+	//			logutil.BgLogger().Debug("update stats using feedback failed", zap.Error(err))
+	//		}
+	//	case <-dumpFeedbackTicker.C:
+	//		err := statsHandle.DumpStatsFeedbackToKV()
+	//		if err != nil {
+	//			logutil.BgLogger().Debug("dump stats feedback failed", zap.Error(err))
+	//		}
+	//	case <-gcStatsTicker.C:
+	//		if !owner.IsOwner() {
+	//			continue
+	//		}
+	//		err := statsHandle.GCStats(do.InfoSchema(), do.DDL().GetLease())
+	//		if err != nil {
+	//			logutil.BgLogger().Debug("GC stats failed", zap.Error(err))
+	//		}
+	//	}
+	//}
 }
 
 func (do *Domain) autoAnalyzeWorker(owner owner.Manager) {
 	defer recoverInDomain("autoAnalyzeWorker", false)
-	statsHandle := do.StatsHandle()
+	_ = do.StatsHandle()
 	analyzeTicker := time.NewTicker(do.statsLease)
 	defer func() {
 		analyzeTicker.Stop()
 		do.wg.Done()
 	}()
-	for {
-		select {
-		case <-analyzeTicker.C:
-			if owner.IsOwner() {
-				statsHandle.HandleAutoAnalyze(do.InfoSchema())
-			}
-		case <-do.exit:
-			return
-		}
-	}
+	//for {
+	//	select {
+	//	case <-analyzeTicker.C:
+	//		if owner.IsOwner() {
+	//			statsHandle.HandleAutoAnalyze(do.InfoSchema())
+	//		}
+	//	case <-do.exit:
+	//		return
+	//	}
+	//}
 }
 
 // ExpensiveQueryHandle returns the expensive query handle.

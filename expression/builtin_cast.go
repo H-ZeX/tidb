@@ -22,7 +22,6 @@
 package expression
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -733,7 +732,6 @@ func (b *builtinCastRealAsIntSig) Clone() builtinFunc {
 }
 
 func (b *builtinCastRealAsIntSig) evalInt(row chunk.Row) (res int64, isNull bool, err error) {
-	fmt.Println("builtinCastRealAsIntSig")
 	val, isNull, err := b.args[0].EvalReal(b.ctx, row)
 	if isNull || err != nil {
 		return res, isNull, err
@@ -1539,7 +1537,6 @@ func (b *builtinCastJSONAsIntSig) Clone() builtinFunc {
 }
 
 func (b *builtinCastJSONAsIntSig) evalInt(row chunk.Row) (res int64, isNull bool, err error) {
-	fmt.Println("builtinCastJSONAsIntSig")
 	val, isNull, err := b.args[0].EvalJSON(b.ctx, row)
 	if isNull || err != nil {
 		return res, isNull, err
